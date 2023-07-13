@@ -1,12 +1,13 @@
 import psycopg2
 
 # 1. Создание таблиц.
+
 def create_db(co):
-    cur.execute('''
-    DROP TABLE phones;
-    DROP TABLE clients;
-    ''') 
-    # производится удаление старых таблиц
+    # cur.execute("""
+    # DROP TABLE phones;
+    # DROP TABLE clients;
+    # """)
+
     cur.execute('''
     CREATE TABLE IF NOT EXISTS clients(
         id  SERIAL PRIMARY KEY,
@@ -14,25 +15,27 @@ def create_db(co):
         surname VARCHAR(40) NOT NULL,
         email VARCHAR(40) NOT NULL UNIQUE
     );
-  
+    ''')
+    cur.execute('''
     CREATE TABLE IF NOT EXISTS phones(
         id SERIAL PRIMARY KEY,
         phone_ VARCHAR(40) UNIQUE,
         client_id INTEGER REFERENCES clients(id)
     );
     ''')
+
     # print('Таблицы созданы')
     co.commit()
 
 # 2. Добавление нового клиента.
 def add_client(co, first_name, last_name, email, phone=None):
     cur.execute('''
-    INSERT INTO clients(name, surname,email) VALUES (%s, %s, %s) RETURNING id;    
+    INSERT INTO clients(name, surname, email) VALUES (%s, %s, %s) RETURNING id;    
     ''', (first_name, last_name, email))
     id_ = cur.fetchone()[0]
     if phone:
         cur.execute('''
-        INSERT INTO phones(phone_,client_id) VALUES (%s, %s);
+        INSERT INTO phones(phone_, client_id) VALUES (%s, %s);
         ''', (phone, id_))
         co.commit()
     # print('Данные добавлены')
@@ -94,19 +97,19 @@ def find_client(co, first_name=None, last_name=None, email=None, phone=None):
     WHERE name=%s OR surname=%s OR email=%s OR phone_=%s;''', (first_name, last_name, email, phone))
     print(cur.fetchall())
     co.commit()
-    print(cur.fetchall())
+    # print(cur.fetchall())
 
 
-with psycopg2.connect(database='bd_phone_book', user='postgres', password='1234') as conn:
+with psycopg2.connect(database='db_phone_book', user='postgres', password='1234') as conn:
     with conn.cursor() as cur:
         create_db(conn)
         add_client(conn, 'A', 'B', '111@gmail.com', '+79990000000')
         add_client(conn, 'A1', 'B1', '222@mail.ru', '+79210000000')
         add_phone(conn, 2, '+79210000001')
-        change_client(conn, id=2, first_name=None, last_name="B1_new", email=None,
+        change_client(conn, id = 2, first_name=None, last_name = 'B1_new', email=None,
                       phones=None, old_phone=None)
         delete_phone(conn, 2, '+79210000000')
         delete_client(conn, '2')
-        find_client(conn, phone='+79990000000')
+        find_client(conn, phone = '+79990000000')
 
 conn.close()
